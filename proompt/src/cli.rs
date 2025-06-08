@@ -1,0 +1,25 @@
+use clap::Parser;
+use std::path::PathBuf;
+use std::string::String;
+
+// Top-level CLI
+#[derive(Debug, Parser)]
+#[command(
+    name = "proompt",
+    version = "1.0",
+    author = "Carlo <carlomus@gmail.com>",
+    about = "Copies one or more files to your copy buffer to feed into AI models"
+)]
+pub struct Cli {
+    /// Optional root directory.  If omitted, we walk up to find `.git`.
+    #[arg(long)]
+    pub path: Option<PathBuf>,
+
+    /// Optional print the prompt generated
+    #[arg(short, long, action = clap::ArgAction::SetTrue)]
+    pub print: bool,
+
+    /// Optinonal files to skip. Uses regex to match
+    #[arg(long, value_delimiter = ' ')]
+    pub skip: Vec<String>,
+}

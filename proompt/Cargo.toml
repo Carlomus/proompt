@@ -1,0 +1,9 @@
+[package]
+name = "proompt"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.3", features = ["derive"] }
+globset = "0.4"
+arboard = "2.0"
