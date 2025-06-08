@@ -20,10 +20,20 @@
 Make sure you have Rust and Cargo installed. Then:
 
 ```bash
-cargo install --path .
+cargo install --path ./proompt
 ```
 
 This will build and install the `proompt` binary into your Cargo bin directory (e.g., `~/.cargo/bin`).
+You may need to add your cargo binaries folder to your PATH
+
+```bash
+export PATH="$HOME/.cargo/bin:$PATH"
+```
+Afterwards, you can check this has been successfully installed by running
+
+```bash
+proompt --help
+```
 
 ## Usage
 
