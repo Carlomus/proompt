@@ -19,6 +19,10 @@ pub struct Cli {
     #[arg(short, long, action = clap::ArgAction::SetTrue)]
     pub print: bool,
 
+    /// Optional include the files in gitignore
+    #[arg(short, long, action = clap::ArgAction::SetTrue)]
+    pub include: bool,
+
     /// Optinonal files to skip. Uses regex to match
     #[arg(long, value_delimiter = ' ')]
     pub skip: Vec<String>,

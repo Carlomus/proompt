@@ -4,35 +4,32 @@ mod text_gen;
 
 use clap::Parser;
 use cli::Cli;
-use globset::{Glob, GlobSetBuilder};
 use paths::get_prompt_root;
 use text_gen::read_files;
 
-use arboard::Clipboard;
+use copypasta_ext::prelude::ClipboardProvider;
+use copypasta_ext::wayland_bin::ClipboardContext;
+use copypasta_ext::ClipResult;
+
 use std::io;
 
-fn copy_to_clipboard(s: &str) {
-    let mut ctx = Clipboard::new().expect("could not initialize clipboard context");
-    ctx.set_text(s.to_string())
-        .expect("failed to copy text to clipboard");
+fn copy_to_clipboard(s: String) -> ClipResult<()> {
+    let mut ctx = ClipboardContext::new()?;
+    ctx.set_contents(s)?;
+    Ok(())
 }
 
 fn main() -> io::Result<()> {
     let args = Cli::parse();
 
-    let mut builder = GlobSetBuilder::new();
-    for pat in &args.skip {
-        // This will panic immediately if `pat` is not a valid glob
-        builder
-            .add(Glob::new(pat).unwrap_or_else(|e| panic!("Invalid --skip glob `{}`: {}", pat, e)));
-    }
-
-    let skip_set = builder.build().unwrap();
     let root = get_prompt_root(&args)?;
-    let prompt = read_files(root, &skip_set)?;
+    let prompt = read_files(root, &args)?;
     if args.print {
         println!("{}", prompt);
     }
-    copy_to_clipboard(&prompt);
+    let _outcome = match copy_to_clipboard(prompt) {
+        Ok(f) => f,
+        Err(error) => panic!("Could not add prompt to clipboard: {error:?}"),
+    };
     Ok(())
 }
