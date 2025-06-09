@@ -43,11 +43,11 @@ proompt [OPTIONS]
 
 ### Options
 
-* `--path <PATH>`
+* `-p, --path <PATH>`
 
   Specify an explicit root directory to scan. If omitted, `proompt` locates the closest parent directory containing a `.git` folder.
 
-* `-p, --print`
+* `--print`
 
   Print the composed prompt to stdout.
 
