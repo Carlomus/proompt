@@ -7,5 +7,6 @@ edition = "2021"
 clap = { version = "4.3", features = ["derive"] }
 copypasta-ext = { version = "0.4.4", default-features = false, features = [
     "wayland-bin",
+    "x11-bin",
 ] }
 ignore = "0.4"

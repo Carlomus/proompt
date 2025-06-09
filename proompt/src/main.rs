@@ -8,13 +8,19 @@ use paths::get_prompt_root;
 use text_gen::read_files;
 
 use copypasta_ext::prelude::ClipboardProvider;
-use copypasta_ext::wayland_bin::ClipboardContext;
+use copypasta_ext::wayland_bin::ClipboardContext as WaylandClipboard;
+use copypasta_ext::x11_bin::ClipboardContext as X11Clipboard;
 use copypasta_ext::ClipResult;
 
 use std::io;
 
 fn copy_to_clipboard(s: String) -> ClipResult<()> {
-    let mut ctx = ClipboardContext::new()?;
+    if let Ok(mut ctx) = WaylandClipboard::new() {
+        if ctx.set_contents(s.clone()).is_ok() {
+            return Ok(());
+        }
+    }
+    let mut ctx = X11Clipboard::new()?;
     ctx.set_contents(s)?;
     Ok(())
 }
