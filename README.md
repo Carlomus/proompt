@@ -12,7 +12,7 @@
   * Skip files or directories via  (`--skip`).
 * **Flexible output**:
 
-  * Print to stdout with `-p`/`--print`.
+  * Print to stdout with `--print`.
   * Optionally include files normally ignored by Git.
 
 ## Installation
