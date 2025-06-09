@@ -7,20 +7,14 @@ use cli::Cli;
 use paths::get_prompt_root;
 use text_gen::read_files;
 
-use copypasta_ext::prelude::ClipboardProvider;
-use copypasta_ext::wayland_bin::ClipboardContext as WaylandClipboard;
-use copypasta_ext::x11_bin::ClipboardContext as X11Clipboard;
+use copypasta_ext;
 use copypasta_ext::ClipResult;
 
-use std::io;
+use std::io::{self, ErrorKind};
 
 fn copy_to_clipboard(s: String) -> ClipResult<()> {
-    if let Ok(mut ctx) = WaylandClipboard::new() {
-        if ctx.set_contents(s.clone()).is_ok() {
-            return Ok(());
-        }
-    }
-    let mut ctx = X11Clipboard::new()?;
+    let mut ctx = copypasta_ext::try_context()
+        .ok_or_else(|| io::Error::new(ErrorKind::Other, "No clipboard context available"))?;
     ctx.set_contents(s)?;
     Ok(())
 }
