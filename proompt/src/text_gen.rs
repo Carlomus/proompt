@@ -2,62 +2,51 @@ use std::path::PathBuf;
 use std::string::String;
 use std::{fs, io};
 
-use globset::{GlobBuilder, GlobSet, GlobSetBuilder};
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
 
 use crate::cli::Cli;
 
 pub fn read_files(root: PathBuf, args: &Cli) -> io::Result<String> {
-    let (skip_set, gitignore) = build_skippers(&root, args);
-    generate_prompt(&root, &root, &skip_set, gitignore.as_ref())
+    let gitignore = build_skippers(&root, args)?;
+    generate_prompt(&root, &root, &gitignore)
 }
 
-fn build_skippers(root: &PathBuf, args: &Cli) -> (GlobSet, Option<Gitignore>) {
-    let mut builder = GlobSetBuilder::new();
-    for pat in &args.skip {
-        builder.add(
-            GlobBuilder::new(pat)
-                .literal_separator(true)
-                .build()
-                .unwrap_or_else(|e| panic!("Invalid skip glob `{}`: {}", pat, e)),
-        );
-    }
-    let skip_set = builder.build().unwrap();
-
-    let gitignore = if !args.include {
+fn build_skippers(root: &PathBuf, args: &Cli) -> io::Result<Gitignore> {
+    let mut gi_builder = GitignoreBuilder::new(root);
+    if !args.include {
         let gi_file = root.join(".gitignore");
         if gi_file.exists() {
-            let mut gi_builder = GitignoreBuilder::new(root);
             gi_builder.add(gi_file);
-            let gi = gi_builder.build().unwrap();
-            Some(gi)
-        } else {
-            None
         }
-    } else {
-        None
-    };
-
-    (skip_set, gitignore)
+    }
+    for pat in &args.skip {
+        gi_builder.add_line(None, pat).map_err(|e| {
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!("Invalid skip pattern `{}`: {}", pat, e),
+            )
+        })?;
+    }
+    gi_builder.build().map_err(|e| {
+        io::Error::new(
+            io::ErrorKind::Other,
+            format!("Failed to build gitignore matcher: {}", e),
+        )
+    })
 }
 
-fn generate_prompt(
-    root: &PathBuf,
-    og_root: &PathBuf,
-    skip_set: &GlobSet,
-    gitignore: Option<&Gitignore>,
-) -> io::Result<String> {
+fn generate_prompt(root: &PathBuf, og_root: &PathBuf, gitignore: &Gitignore) -> io::Result<String> {
     let mut prompt = String::new();
     for entry_res in fs::read_dir(&root)? {
         let entry = entry_res?;
         let path = entry.path();
 
-        if skip_path(&path, &og_root, &skip_set, gitignore) {
+        if skip_path(&path, og_root, gitignore) {
             continue;
         }
 
         if path.is_dir() {
-            let sub_prompt = generate_prompt(&path, &og_root, &skip_set, gitignore)?;
+            let sub_prompt = generate_prompt(&path, &og_root, gitignore)?;
             prompt.push_str(&sub_prompt);
         } else {
             let contents = match fs::read_to_string(&path) {
@@ -75,12 +64,7 @@ fn generate_prompt(
     Ok(prompt)
 }
 
-fn skip_path(
-    path: &PathBuf,
-    og_root: &PathBuf,
-    skip_set: &GlobSet,
-    gitignore: Option<&Gitignore>,
-) -> bool {
+fn skip_path(path: &PathBuf, og_root: &PathBuf, gi: &Gitignore) -> bool {
     let path_str = path.file_name().and_then(|s| s.to_str());
     let ext_str = path.extension().and_then(|s| s.to_str());
     if path_str == Some(".git")
@@ -90,14 +74,11 @@ fn skip_path(
     {
         return true;
     }
+
     if let Ok(rel) = path.strip_prefix(og_root) {
-        if skip_set.is_match(rel) {
+        // use the two-arg API: (relative_path, is_dir)
+        if gi.matched(rel, path.is_dir()).is_ignore() {
             return true;
-        }
-        if let Some(gi) = gitignore {
-            if gi.matched(rel, path.is_dir()).is_ignore() {
-                return true;
-            }
         }
     }
 

@@ -12,11 +12,11 @@ use std::string::String;
 )]
 pub struct Cli {
     /// Optional root directory.  If omitted, we walk up to find `.git`.
-    #[arg(long)]
+    #[arg(short, long)]
     pub path: Option<PathBuf>,
 
     /// Optional print the prompt generated
-    #[arg(short, long, action = clap::ArgAction::SetTrue)]
+    #[arg(long, action = clap::ArgAction::SetTrue)]
     pub print: bool,
 
     /// Optional include the files in gitignore
@@ -24,6 +24,6 @@ pub struct Cli {
     pub include: bool,
 
     /// Optinonal files to skip. Uses regex to match
-    #[arg(long, value_delimiter = ' ')]
+    #[arg(short, long, value_delimiter = ' ')]
     pub skip: Vec<String>,
 }

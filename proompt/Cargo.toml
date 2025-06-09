@@ -5,7 +5,6 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.3", features = ["derive"] }
-globset = "0.4"
 copypasta-ext = { version = "0.4.4", default-features = false, features = [
     "wayland-bin",
 ] }
