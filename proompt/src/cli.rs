@@ -11,13 +11,17 @@ use std::string::String;
     about = "Copies one or more files to your copy buffer to feed into AI models"
 )]
 pub struct Cli {
-    /// Optional root directory.  If omitted, we walk up to find `.git`.
+    /// Optional root directory. If omitted, we walk up to find `.git`.
     #[arg(short, long)]
     pub path: Option<PathBuf>,
 
     /// Optional print the prompt generated
     #[arg(long, action = clap::ArgAction::SetTrue)]
     pub print: bool,
+
+    /// Optional force individual files or folders (i.e. not recursive)
+    #[arg(long, short, value_delimiter = ' ')]
+    pub force: Vec<String>,
 
     /// Optional include the files in gitignore
     #[arg(short, long, action = clap::ArgAction::SetTrue)]

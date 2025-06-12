@@ -8,7 +8,11 @@ use crate::cli::Cli;
 
 pub fn read_files(root: PathBuf, args: &Cli) -> io::Result<String> {
     let gitignore = build_skippers(&root, args)?;
-    generate_prompt(&root, &root, &gitignore)
+    if !args.force.is_empty() {
+        flat_prompt(args)
+    } else {
+        recursive_prompt(&root, &root, &gitignore)
+    }
 }
 
 fn build_skippers(root: &PathBuf, args: &Cli) -> io::Result<Gitignore> {
@@ -35,7 +39,20 @@ fn build_skippers(root: &PathBuf, args: &Cli) -> io::Result<Gitignore> {
     })
 }
 
-fn generate_prompt(root: &PathBuf, og_root: &PathBuf, gitignore: &Gitignore) -> io::Result<String> {
+fn write_to_prompt(prompt: &mut String, path: &PathBuf, contents: &str) {
+    let filename = path.to_string_lossy();
+
+    prompt.push_str("\n\nFILE:");
+    prompt.push_str(&filename);
+    prompt.push('\n');
+    prompt.push_str(&contents);
+}
+
+fn recursive_prompt(
+    root: &PathBuf,
+    og_root: &PathBuf,
+    gitignore: &Gitignore,
+) -> io::Result<String> {
     let mut prompt = String::new();
     for entry_res in fs::read_dir(&root)? {
         let entry = entry_res?;
@@ -44,23 +61,44 @@ fn generate_prompt(root: &PathBuf, og_root: &PathBuf, gitignore: &Gitignore) -> 
         if skip_path(&path, og_root, gitignore) {
             continue;
         }
-
         if path.is_dir() {
-            let sub_prompt = generate_prompt(&path, &og_root, gitignore)?;
+            let sub_prompt = recursive_prompt(&path, &og_root, gitignore)?;
             prompt.push_str(&sub_prompt);
         } else {
             let contents = match fs::read_to_string(&path) {
                 Ok(s) => s,
                 Err(_) => continue,
             };
-            let filename = path.to_string_lossy();
-
-            prompt.push_str("\n\nFILE:");
-            prompt.push_str(&filename);
-            prompt.push('\n');
-            prompt.push_str(&contents);
+            write_to_prompt(&mut prompt, &path, &contents);
         }
     }
+    Ok(prompt)
+}
+
+fn flat_prompt(args: &Cli) -> io::Result<String> {
+    let mut prompt = String::new();
+
+    for included in &args.force {
+        let path = PathBuf::from(included);
+
+        if path.is_dir() {
+            for entry_result in fs::read_dir(&path)? {
+                let entry = entry_result?;
+                let file_path = entry.path();
+
+                if file_path.is_file() {
+                    if let Ok(contents) = fs::read_to_string(&file_path) {
+                        write_to_prompt(&mut prompt, &file_path, &contents);
+                    }
+                }
+            }
+        } else if path.is_file() {
+            if let Ok(contents) = fs::read_to_string(&path) {
+                write_to_prompt(&mut prompt, &path, &contents);
+            }
+        }
+    }
+
     Ok(prompt)
 }
 
