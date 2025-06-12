@@ -60,7 +60,7 @@ proompt [OPTIONS]
   One or more glob patterns to skip. Patterns are matched relative to the project root. For example:
 
   ```bash
-  proompt --skip "target/*" "*.lock"
+  proompt --skip "target/* *.lock"
   ```
 
 ### Examples
@@ -80,7 +80,7 @@ proompt [OPTIONS]
 * Scan a custom directory and skip build artifacts:
 
   ```bash
-  proompt --path /my/project --skip "target/*" "build/*"
+  proompt --path /my/project --skip "target/* build/*"
   ```
 
 ## Upcoming Features
